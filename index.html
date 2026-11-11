@@ -1,0 +1,371 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RP Universe</title>
+<style>
+:root {
+  --bg:#090810;
+  --panel:#151321;
+  --panel2:#1d192c;
+  --purple:#9257ff;
+  --text:#fff;
+  --muted:#a6a0b7;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Arial,sans-serif;padding-bottom:85px;
+}
+header{
+  padding:19px 18px;background:#100d1b;
+  border-bottom:1px solid #292238;
+  position:sticky;top:0;z-index:5;
+}
+.logo{font-size:23px;font-weight:800;color:#b58aff}
+.logo span{color:white}
+main{padding:18px;max-width:750px;margin:auto}
+h2{font-size:23px;margin:8px 0 18px}
+.muted{color:var(--muted);font-size:13px}
+.card{
+  background:var(--panel);border:1px solid #29233a;
+  border-radius:16px;padding:15px;margin-bottom:13px;
+}
+button{
+  background:var(--purple);color:white;border:0;
+  padding:12px 16px;border-radius:12px;
+  font-weight:bold;cursor:pointer;
+}
+button.secondary{background:var(--panel2);border:1px solid #39304d}
+input,textarea,select{
+  width:100%;background:#100e19;color:white;
+  border:1px solid #39304d;border-radius:11px;
+  padding:13px;margin:7px 0 13px;font:inherit;
+}
+textarea{min-height:95px;resize:vertical}
+label{font-size:13px;color:#c9c1d8}
+.bottom{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#100d19;border-top:1px solid #30263e;
+  display:flex;justify-content:space-around;
+  padding:10px 5px calc(10px + env(safe-area-inset-bottom));
+  z-index:10;
+}
+.nav{
+  background:transparent;color:#aaa;
+  display:flex;flex-direction:column;align-items:center;
+  gap:4px;font-size:11px;padding:7px 15px;
+}
+.nav.active{color:#b58aff}
+.nav b{font-size:20px}
+.avatar{
+  width:55px;height:55px;border-radius:50%;
+  object-fit:cover;background:#302440;
+}
+.character{display:flex;gap:13px;align-items:center}
+.character img{width:62px;height:62px;border-radius:13px;object-fit:cover;background:#302440}
+.character-info{flex:1;min-width:0}
+.character-info strong{display:block;margin-bottom:5px}
+.hidden{display:none!important}
+.message{
+  padding:11px 14px;border-radius:14px;
+  background:#211b31;margin:9px 0;max-width:85%;
+  overflow-wrap:anywhere;
+}
+.message.mine{background:#6035a4;margin-left:auto}
+.chatbox{height:45vh;overflow:auto;padding:10px 0}
+.row{display:flex;gap:8px;align-items:center}
+.row input{margin:0}
+.small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">RP <span>UNIVERSE</span></div>
+  <div class="muted">Твоя вселенная персонажей</div>
+</header>
+
+<main>
+<section id="chats">
+  <h2>Мои чаты</h2>
+  <div id="chatList"></div>
+  <div id="chatWindow" class="hidden">
+    <div class="row">
+      <button class="secondary" onclick="closeChat()">←</button>
+      <strong id="chatTitle">Чат</strong>
+    </div>
+    <div class="small" id="activePersonaLabel"></div>
+    <div class="chatbox" id="messages"></div>
+    <div class="row">
+      <input id="messageInput" placeholder="Напиши сообщение..." onkeydown="if(event.key==='Enter')sendMessage()">
+      <button onclick="sendMessage()">➤</button>
+    </div>
+    <p class="small">Пока доступна отправка сообщений. Ответы ИИ подключим отдельно.</p>
+  </div>
+</section>
+
+<section id="characters" class="hidden">
+  <h2>Персонажи</h2>
+  <button onclick="showCreateCharacter()">＋ Создать персонажа</button>
+  <div id="characterList" style="margin-top:18px"></div>
+
+  <div id="createCharacter" class="card hidden">
+    <h3>Новый персонаж</h3>
+    <label>Имя</label>
+    <input id="charName" placeholder="Например, Алекс">
+    <label>Фандом или вселенная</label>
+    <input id="charWorld" placeholder="Например, One Piece">
+    <label>Описание персонажа</label>
+    <textarea id="charDescription" placeholder="Расскажи о персонаже..."></textarea>
+    <label>Характер</label>
+    <textarea id="charPersonality" placeholder="Как он себя ведёт?"></textarea>
+    <label>Фото из галереи</label>
+    <input type="file" id="charPhoto" accept="image/*">
+    <button onclick="saveCharacter()">Сохранить</button>
+    <button class="secondary" onclick="hideCreateCharacter()">Отмена</button>
+  </div>
+</section>
+
+<section id="profile" class="hidden">
+  <h2>Мой профиль</h2>
+  <div class="card">
+    <h3>Моя персона</h3>
+    <p class="small">Выбери, от чьего имени ты будешь общаться.</p>
+    <label>Имя персоны</label>
+    <input id="personaName" placeholder="Твоё имя">
+    <label>Описание</label>
+    <textarea id="personaDescription" placeholder="Расскажи о своей персоне..."></textarea>
+    <label>Аватар из галереи</label>
+    <input type="file" id="personaPhoto" accept="image/*">
+    <button onclick="savePersona()">Сохранить персону</button>
+  </div>
+  <div class="card">
+    <h3>Активная персона</h3>
+    <div id="personaStatus" class="muted">Персона не выбрана</div>
+    <button class="secondary" onclick="activatePersona()">Использовать эту персону</button>
+  </div>
+</section>
+</main>
+
+<nav class="bottom">
+  <button class="nav active" data-page="chats" onclick="showPage('chats')"><b>☏</b>Чаты</button>
+  <button class="nav" data-page="characters" onclick="showPage('characters')"><b>✦</b>Персонажи</button>
+  <button class="nav" data-page="profile" onclick="showPage('profile')"><b>♙</b>Профиль</button>
+</nav>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let characters = JSON.parse(localStorage.getItem('rp_characters') || '[]');
+let chats = JSON.parse(localStorage.getItem('rp_chats') || '[]');
+let persona = JSON.parse(localStorage.getItem('rp_persona') || 'null');
+let activePersona = localStorage.getItem('rp_active_persona') || 'false';
+let currentChat = null;
+
+function store(){
+  localStorage.setItem('rp_characters',JSON.stringify(characters));
+  localStorage.setItem('rp_chats',JSON.stringify(chats));
+  localStorage.setItem('rp_persona',JSON.stringify(persona));
+}
+
+function showPage(page){
+  ['chats','characters','profile'].forEach(p=>{
+    $(p).classList.toggle('hidden',p!==page);
+  });
+  document.querySelectorAll('.nav').forEach(b=>{
+    b.classList.toggle('active',b.dataset.page===page);
+  });
+  render();
+}
+
+function showCreateCharacter(){
+  $('createCharacter').classList.remove('hidden');
+}
+function hideCreateCharacter(){
+  $('createCharacter').classList.add('hidden');
+}
+
+function readPhoto(file){
+  return new Promise(resolve=>{
+    if(!file){resolve('');return;}
+    if(!file.type.startsWith('image/')){alert('Выбери изображение');resolve('');return;}
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=()=>resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
+async function saveCharacter(){
+  const name=$('charName').value.trim();
+  if(!name){alert('Введи имя персонажа');return;}
+  const photo=await readPhoto($('charPhoto').files[0]);
+  characters.push({
+    id:Date.now(),name,
+    world:$('charWorld').value,
+    description:$('charDescription').value,
+    personality:$('charPersonality').value,
+    photo
+  });
+  store();
+  ['charName','charWorld','charDescription','charPersonality','charPhoto'].forEach(id=>$(id).value='');
+  hideCreateCharacter();
+  render();
+  alert('Персонаж создан!');
+}
+
+function renderCharacters(){
+  $('characterList').innerHTML='';
+  if(!characters.length){
+    $('characterList').innerHTML='<p class="muted">Здесь пока нет персонажей. Создай первого!</p>';
+    return;
+  }
+  characters.forEach(c=>{
+    const el=document.createElement('div');
+    el.className='card character';
+    const img=document.createElement('img');
+    img.src=c.photo||'';
+    const info=document.createElement('div');
+    info.className='character-info';
+    const name=document.createElement('strong');
+    name.textContent=c.name;
+    const world=document.createElement('div');
+    world.className='small';
+    world.textContent=c.world||'Без фандома';
+    info.append(name,world);
+    const chatButton=document.createElement('button');
+    chatButton.textContent='Чат';
+    chatButton.onclick=()=>openChat(c.id);
+    el.append(img,info,chatButton);
+    $('characterList').append(el);
+  });
+}
+
+function openChat(id){
+  const c=characters.find(x=>x.id===id);
+  if(!c)return;
+  let chat=chats.find(x=>x.characterId===id);
+  if(!chat){
+    chat={id:Date.now(),characterId:id,name:c.name,messages:[]};
+    chats.push(chat);
+    store();
+  }
+  currentChat=chat.id;
+  $('chatTitle').textContent=c.name;
+  $('chatWindow').classList.remove('hidden');
+  $('chatList').classList.add('hidden');
+  renderMessages();
+  updatePersonaLabel();
+}
+
+function closeChat(){
+  currentChat=null;
+  $('chatWindow').classList.add('hidden');
+  $('chatList').classList.remove('hidden');
+  render();
+}
+
+function renderMessages(){
+  const chat=chats.find(x=>x.id===currentChat);
+  if(!chat)return;
+  $('messages').innerHTML='';
+  chat.messages.forEach(m=>{
+    const el=document.createElement('div');
+    el.className='message '+(m.mine?'mine':'');
+    el.textContent=m.text;
+    $('messages').append(el);
+  });
+  $('messages').scrollTop=$('messages').scrollHeight;
+}
+
+function sendMessage(){
+  const input=$('messageInput');
+  const value=input.value.trim();
+  if(!value||!currentChat)return;
+  const chat=chats.find(x=>x.id===currentChat);
+  chat.messages.push({text:value,mine:true});
+  input.value='';
+  store();
+  renderMessages();
+}
+
+function renderChats(){
+  $('chatList').innerHTML='';
+  if(!chats.length){
+    $('chatList').innerHTML='<p class="muted">У тебя пока нет чатов. Открой персонажа и нажми «Чат».</p>';
+    return;
+  }
+  chats.forEach(chat=>{
+    const c=characters.find(x=>x.id===chat.characterId);
+    if(!c)return;
+    const el=document.createElement('div');
+    el.className='card character';
+    const info=document.createElement('div');
+    info.className='character-info';
+    const name=document.createElement('strong');
+    name.textContent=c.name;
+    const desc=document.createElement('div');
+    desc.className='small';
+    desc.textContent=chat.messages.length ? chat.messages[chat.messages.length-1].text : 'Начать общение';
+    info.append(name,desc);
+    const btn=document.createElement('button');
+    btn.textContent='Открыть';
+    btn.onclick=()=>openChat(c.id);
+    el.append(info,btn);
+    $('chatList').append(el);
+  });
+}
+
+async function savePersona(){
+  const name=$('personaName').value.trim();
+  if(!name){alert('Введи имя персоны');return;}
+  const photo=await readPhoto($('personaPhoto').files[0]);
+  persona={
+    name,
+    description:$('personaDescription').value,
+    photo:photo||(persona&&persona.photo)||''
+  };
+  store();
+  renderPersona();
+  alert('Персона сохранена!');
+}
+
+function activatePersona(){
+  if(!persona){alert('Сначала создай персону');return;}
+  activePersona='true';
+  localStorage.setItem('rp_active_persona','true');
+  renderPersona();
+  updatePersonaLabel();
+  alert('Персона активирована!');
+}
+
+function renderPersona(){
+  if(!persona){
+    $('personaStatus').textContent='Персона не создана';
+    return;
+  }
+  $('personaName').value=persona.name||'';
+  $('personaDescription').value=persona.description||'';
+  $('personaStatus').textContent=
+    persona.name+(activePersona==='true'?' — активна':' — не активна');
+}
+
+function updatePersonaLabel(){
+  $('activePersonaLabel').textContent=
+    activePersona==='true'&&persona ? 'Ты общаешься от имени: '+persona.name : 'Активная персона не выбрана';
+}
+
+function render(){
+  renderCharacters();
+  renderChats();
+  renderPersona();
+  if(currentChat)renderMessages();
+}
+
+render();
+</script>
+</body>
+</html>
